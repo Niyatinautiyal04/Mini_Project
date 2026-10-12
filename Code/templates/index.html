@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Recognition</title>
+    <style>
+        body {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            text-align: center;
+            background-color: #d2d2d2;
+            margin: 0;
+            padding: 10px;
+        }
+
+        h1 {
+            color: #000000;
+            text-decoration: underline solid black;
+            font-size: 40px;
+        }
+
+        .video-container {
+            margin-top: 20px;
+            border: 2px solid #000000;
+            border-radius: 5px;
+            display: inline-block;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        .text-box {
+            margin-top: 10px;
+            font-size: 27px;
+            font-weight: bold;
+            color: #3120ea;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>AI Sign Language Translator</h1>
+
+    <!-- Displays the currently recognized sign in large text -->
+    <div class="text-box">Current Sign: <span id="sign-text">None</span></div>
+
+    <div class="video-container">
+        <img src="{{ url_for('video_feed') }}" width="700" height="485" alt="Video Feed">
+    </div>
+
+    <script>
+        let lastSign = "";
+
+        // Function to check the sign and speak
+        async function fetchAndSpeakSign() {
+            try {
+                // Ask the Flask server for the latest prediction
+                const response = await fetch('/get_sign');
+                const data = await response.json();
+
+                const currentSign = data.sign;
+
+                if (currentSign && currentSign !== lastSign && currentSign !== "None") {
+
+                    // Update text on screen
+                    document.getElementById('sign-text').innerText = currentSign;
+
+                    // STOP any currently speaking letters to prevent a traffic jam
+                    window.speechSynthesis.cancel();
+
+                    // Trigger the read-aloud functionality
+                    let utterance = new SpeechSynthesisUtterance(currentSign);
+                    window.speechSynthesis.speak(utterance);
+
+                    // Remember this sign so we don't repeat it infinitely
+                    lastSign = currentSign;
+                }
+            }
+             catch (error) {
+            console.error("Error fetching sign:", error);
+        }
+        }
+
+        // Check the sign every 1000 milliseconds (1 second)
+        setInterval(fetchAndSpeakSign, 1000);
+    </script>
+
+</body>
+
+</html>
